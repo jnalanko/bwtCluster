@@ -1,0 +1,85 @@
+#########################################################################
+# This file contains the configurable parameters of the algorithm, the 
+# file system paths of the input and output files and working disk space.
+# All of these parameters can also be given as command line parameters,  
+# in which case the value given on the command line overrides the        
+# value in this configuration file.                                      
+#                                                                        
+# For example this command gives the input file and sets the number of 
+# clusters in k-means:
+# ./bin/BWT_cluster --input-reads reads.fna --kmeans-number-of-cluster 50
+#                                                                                            
+#########################################################################
+
+# The input reads in FASTA format
+--input-reads: your_file_here.fna
+
+# The file to write the output clusters in FASTA format.
+# The reads in a cluster are consecutive in the file such that the fasta header of the
+# first read of the cluster is >cluster_start, and empty otherwise
+--final-clusters-out: ./results/finalclusters.fna
+
+# Workspace path. The program will use this directory
+# for temporary files. Make sure the directory exists
+--workspace: ./workspace
+
+# Number of parallel threads to run
+--threads: 4
+
+# The filtering parameters
+--read-filtering-k: 16
+--read-filtering-threshold: 4
+
+# The precluster building parameters
+--preclustering-k: 36
+--precluster-min-size: 80
+--precluster-max-size: 10
+
+# The K-means k-mer length
+--kmeans-kmer-length: 4
+
+# Run Metacluster's implementation of k-means instead of ours?
+# Possible values: "true"/"false"
+--run-metacluster: false
+
+# The number of clusters centers in k-means. Only applies if
+# run-metacluster is false (Metacluster determines the number of
+# cluster centers automatically).
+--kmeans-number-of-clusters: 50
+
+# The number of rounds to run k-means. k-means will run until it has converged,
+# or this number of iterations is reached. Only applies if run-metacluster is false.
+--kmeans-number-of-rounds: 100
+
+# The program can use either the RRR-bitvector for the data structures,
+# which saves some space but is slow, or a plain bitvector. To use the
+# rrr-bitvector, write "rrr" here, and to use the basic bit vector write "basic"
+--bitvector: basic
+
+# Use paired end information? If true, assumes that every two consecutive
+# reads in the input file are mate pairs, and will be merged during the preclustering stage.
+# Possible values: "true"/"false"
+--paired-ends: false
+
+# Start directly from the k-means phase. The file in --input-reads is now
+# interpreted as the precluster file (see the required format under --preclusters-out).
+--only-kmeans: false
+
+############################################################################
+# Below are the paths to the intermediate files produced by the program.   #
+############################################################################
+
+# The program writes the reads that survive filtering here
+--filtering-good-out: ./results/good_reads.txt
+
+# The program writes the reads that don't survive filtering here
+--filtering-bad-out: ./results/bad_reads.txt
+
+# The reads of the preclusters are written here in fasta format
+# such that the reads in a precluster are consecutive in the file, and the fasta header of the
+# first read of the precluster is >cluster_start
+--preclusters-out: ./results/preclusters.fna
+
+
+
+
