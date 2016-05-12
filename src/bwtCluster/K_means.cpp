@@ -10,6 +10,7 @@
 #include <set>
 #include <fstream>
 #include <cassert>
+#include <thread>
 #include <unordered_map>
 
 using namespace std;
@@ -71,7 +72,7 @@ vector<int32_t> K_means::computeRankVector(const vector<float>& distribution){
     }
     return result;
 }
-
+    
 char K_means::complement(char c){
     if(c == 'A') return 'T';
     if(c == 'C') return 'G';
@@ -144,25 +145,80 @@ vector<float> K_means::processGroup(vector<string>& precluster, int64_t k_long, 
    
 }
 
-K_means::K_means(string precluster_file, bool rc, int64_t kmer_k){
+
+void K_means::worker_thread(ParallelQueue<std::pair<std::vector<string>, int64_t> >& Q, int64_t kmer_k, bool rc){
+    while(true){
+        pair<vector<string>,int64_t> work_frame = Q.pop();
+        vector<string> precluster = work_frame.first;
+        int64_t id = work_frame.second;
+        if(id == -1){
+            // No more work signal received
+            Q.push(work_frame);
+            break;
+        }
+        vector<float> distribution = processGroup(precluster, 16, kmer_k, rc, 2); // TODO: 16 and 2 into the config file
+        
+        // Store the results
+        distributions[id] = distribution;
+        rankVectors[id] = computeRankVector(distribution);
+    }    
+}
+
+
+K_means::K_means(string precluster_file, bool rc, int64_t kmer_k, int nThreads){
     if(rc)
         cerr << getTimeString() << " Computing " << kmer_k << "-mer distributions for k-means (RC)" << endl;
     else
         cerr << getTimeString() << " Computing " << kmer_k << "-mer distributions for k-means" << endl;
 
-    Parser parser;
-    ifstream infile(precluster_file);
     this->precluster_file = precluster_file;
+
     
-    while(true){
-        vector<string> precluster = parser.next_cluster(infile);
-        if(precluster.size() == 0) break;
-        vector<float> distribution = processGroup(precluster, 16, kmer_k, rc, 2); // TODO: 16 and 2 into the config file
-        distributions.push_back(distribution);
-        rankVectors.push_back(computeRankVector(distribution));
-    }
+    Parser parser;
+    
+    // Count the number of preclusters
+    ifstream infile_counting(precluster_file);
+    int64_t number_of_preclusters = parser.count_clusters(infile_counting);
+    cerr << getTimeString() << " " << number_of_preclusters << " preclusters in k-means" << endl;
+    infile_counting.close();
+        
+    // Allocate space for the distributions and rank vectors
+    distributions.resize(number_of_preclusters);
+    rankVectors.resize(number_of_preclusters);
     distributions.shrink_to_fit();
     rankVectors.shrink_to_fit();
+    
+    // A parallel queue to preprocess the preclusters
+    // Each element in the queue the set of reads in one precluster, and
+    // the id of the precluster.
+    // The id -1 in the queue signals the worker threads to quit
+    ParallelQueue<std::pair<std::vector<string>, int64_t> > Q;
+        
+    // Create the threads
+    vector<thread> threads(nThreads);
+    for(int i = 0; i < nThreads; i++){
+        threads[i] = std::thread(&K_means::worker_thread, this, ref(Q), kmer_k, rc);
+    }
+    
+    // Push work to the queue
+    ifstream infile(precluster_file);
+    int64_t precluster_id = 0;
+    while(true){
+        vector<string> precluster = parser.next_cluster(infile);
+        if(precluster.size() != 0)
+            Q.push({precluster,precluster_id});
+        else{
+            Q.push({precluster,-1});
+            break;
+        }
+        precluster_id++;
+    }
+    
+    assert(precluster_id == number_of_preclusters);
+    
+    // Wait for the threads to finish
+    for(int i = 0; i < nThreads; i++) threads[i].join();
+
 }
 
 

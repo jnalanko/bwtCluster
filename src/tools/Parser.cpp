@@ -246,4 +246,13 @@ std::pair<std::string, std::string> Parser::next_read(std::istream &input){
     return {read, header};
 }
 
+int64_t Parser::count_clusters(std::istream& input){
+    string line;
+    int64_t count = 0;
+    while(getline(input,line)){
+        if(line.substr(0,14) == ">cluster_start") count++;
+    }
+    return count;
+}
+
 

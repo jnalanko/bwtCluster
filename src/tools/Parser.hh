@@ -66,6 +66,8 @@ public:
     
     std::pair<std::string, std::string> next_read(std::istream &input);
     
+    int64_t count_clusters(std::istream& input);
+    
     struct parseConcatenateWithHeaders_return{
         std::string data; // header, data, header, data...
         std::vector<int64_t> starts;

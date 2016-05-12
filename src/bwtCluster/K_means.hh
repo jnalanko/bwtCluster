@@ -4,6 +4,9 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <mutex>
+#include "ParallelQueue.hh"
+
 
 // Metacluster's implementation of k-means
 class K_means_metacluster {
@@ -60,6 +63,10 @@ private:
 
     std::vector<std::vector<int64_t> > mergeClusters(double threshold, std::vector<std::vector<int64_t> > & assignments);
     void writeClusters(std::vector<std::vector<int64_t> >& finalClusters, std::string results_file, std::string workspace_dir);
+    
+    // Worker thread for precluster preprocessing
+    void worker_thread(ParallelQueue<std::pair<std::vector<string>, int64_t> >& Q, int64_t kmer_k, bool rc);
+    std::mutex worker_thread_mutex;
 
     
 public:
@@ -73,22 +80,22 @@ public:
      * first read of each precluster is ">precluster_start"
      *
      * @param    precluster_file  The fasta file which contains the preclusters.
-     * @param    rc        True = consider reverse complements
-     * @param    kmer_k    The k-mer length
-     *
+     * @param    rc               True = consider reverse complements
+     * @param    kmer_k           The k-mer length
+     * @param    nThreads         Number of threads to use for preprocessing the preclusters
      */
-    K_means(std::string precluster_file, bool rc, int64_t kmer_k);
+    K_means(std::string precluster_file, bool rc, int64_t kmer_k, int nThreads);
 
     /**
      * @brief Function clusterGroups
      *
-     * Clusters groups based on the Spearman footrule distance of the kmer compositions
+     * Clusters groups based on the Spearma;n footrule distance of the kmer compositions
      * and the k-means algorithm
      *
-     * @param    kmeans_k    The parameter k of k-means
-     * @param    nRounds     Number of rounds to run the k-means algorithm
-     * @param    results_file The filename of the output
-     * @param    workspace    Working space directory
+     * @param    kmeans_k      The parameter k of k-means
+     * @param    nRounds       Number of rounds to run the k-means algorithm
+     * @param    results_file  The filename of the output
+     * @param    workspace     Working space directory
      * 
      *
      */

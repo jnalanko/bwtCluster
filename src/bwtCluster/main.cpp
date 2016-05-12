@@ -300,7 +300,7 @@ void run_kmeans(Config config){
         K_means_metacluster kmeans(config.preclusters_out, config.final_clusters_out, config.k_means_k_mer_length);
         kmeans.run(config.final_clusters_out,config.workspace_path);
     } else{
-        K_means kmeans(config.preclusters_out, true, config.k_means_k_mer_length);
+        K_means kmeans(config.preclusters_out, true, config.k_means_k_mer_length,config.number_of_threads);
         kmeans.run(config.k_means_number_of_clusters,config.k_means_rounds,config.final_clusters_out,config.workspace_path); // TODO: 100 to command line parameter
     }
 }
