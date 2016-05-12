@@ -1,0 +1,35 @@
+System requirements:
+- A 64-bit CPU
+- The compilers gcc and a recent enough g++ with a support for the -std=c++11 flag
+
+How to compile:
+
+1. Load submodules:
+  git submodule init
+  git submodule update
+2. Compile dependencies: Run the command "make dependencies" in the project root
+   and hope for the best.
+3. Compile the main project: Run the command "make release"
+
+The final binary will be generated into the ./bin directory
+
+The program is used as follows:
+./bin/BWT_cluster --input-reads reads.fna
+
+The program reads the configuration parameters from config.txt.
+The config.txt contains the path of the eventual output file,
+and parameters relating to the function the pipeline.
+To override the default parameters, you can give them as command
+line parameters like this:
+
+./bin/BWT_cluster --input-reads reads.fna --preclustering-k 40 --threads 16
+
+For a full list of available parameters see config.txt
+
+You can also give your own config file with the --config option:
+./bin/BWT_cluster --input-reads reads.fna --config my_config.txt
+
+----
+
+For a clean stand-alone implementation of the BWT index used 
+in this project, see github.com/jnalanko/BD_BWT_index
